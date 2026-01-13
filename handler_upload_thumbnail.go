@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"mime"
@@ -69,7 +71,14 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	//Transforms http header like "image/png" => ".png"
 	fileExtension := "." + strings.Split(contentType, "/")[1]
 
-	filename := videoIDString + fileExtension // "<id>.png"
+	randomBytes := make([]byte, 32)
+	rand.Read(randomBytes)
+
+	//RawURLEncoding doesn't include characters like {=, /, +} that have special meaning on
+	//file paths and URLs, so its safer for this use case.
+	fileName := base64.RawURLEncoding.EncodeToString(randomBytes)
+
+	filename := fileName + fileExtension // "<id>.png"
 	filepath := filepath.Join(cfg.assetsRoot, filename)
 	fp, err := os.Create(filepath)
 	if err != nil {
